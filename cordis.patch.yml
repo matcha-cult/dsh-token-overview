@@ -1,0 +1,5 @@
+# dsh-token-overview: one Host half plus a Web Client module that registers the
+# token-overview action in the conversation session header.
+- insert:
+    - id: token-overview
+      name: dsh-token-overview

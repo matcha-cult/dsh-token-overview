@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Token 总览",
+    "description": "在会话头部添加 token 总览入口，汇总当前会话中 Lead 与所有 teammate / subagent 的 token 消耗。"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Token Overview",
+    "description": "Adds a token overview action to the session header that sums token usage for the Lead and every teammate or subagent in the current session."
+  }
+}
