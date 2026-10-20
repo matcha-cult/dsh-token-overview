@@ -1,107 +1,95 @@
+[English](README.en.md)
+
 # dsh-token-overview
 
-A DeepSeek Harness Web plugin that answers one question without leaving the session:
-**how many tokens did this whole agent run consume?**
+一个 DeepSeek Harness Web 插件，不用离开会话就能回答一个问题：
+**这次智能体运行总共消耗了多少 token？**
 
-The stock session header only shows the attached (Lead) session's usage pill. This plugin
-adds a **`token总览`** action next to the other header actions. Click it and a floating
-panel opens below the text with per-agent token totals for the current Session tree —
-the Lead plus every teammate / subagent it delegated to — and the combined total.
+原生会话头部只显示当前挂载（Lead）会话的 usage 药丸。本插件在头部操作区新增
+**`token总览`** 入口：点击后，文字下方弹出浮窗，按代理列出当前会话树的 token 总量——
+Lead 以及它委派的所有 teammate / subagent——并给出合计。
 
-## Features
+## 功能
 
-- **Header action, not a new page.** One click, one popover; no navigation.
-- **Whole run, one number.** Sums the Lead and every delegated child session recursively.
-- **Per-agent breakdown.** Name, role (Lead / Teammate / Subagent), token total and share.
-- **Same accounting as the host.** Reads the host-computed `tokenUsage` projection, so the
-  four buckets match the built-in usage pill exactly:
-  `uncached input + cache read + cache write + output`.
-- **Team-aware labels.** Uses the durable `agentTeam` roster for teammate names; falls back
-  to `subagentCatalog` labels for ordinary subagents.
-- **Live.** Numbers refresh while agents are still running, because the panel subscribes to
-  the same Client session store the rest of the UI uses.
-- **Theme-native.** Styled only with `--dsw-alias-*` theme tokens; works in light and dark.
+- **头部入口，不新增页面。** 一次点击、一个浮窗，不需要跳转。
+- **整场运行一个数。** 递归累加 Lead 与所有被委派的子会话。
+- **逐代理明细。** 名称、角色（Lead / Teammate / Subagent）、token 总量与占比。
+- **与宿主同一口径。** 读取宿主算好的 `tokenUsage` 投影，四个桶与自带 usage 药丸完全一致：
+  `未命中输入 + 缓存读 + 缓存写 + 输出`。
+- **团队感知的名称。** 优先用持久的 `agentTeam` roster 取 teammate 名称，普通子代理回退到
+  `subagentCatalog` 标签。
+- **实时刷新。** 代理还在运行时数字也会更新，因为浮窗订阅的是与 UI 其他部分相同的
+  Client 会话 store。
+- **主题原生。** 只用 `--dsw-alias-*` 主题 token 着色，明暗主题均可。
 
-## Install
+## 安装
 
-This repository is a DSH bundle: the Host half is a no-op and the Web Client module
-registers the header action.
+本仓库是一个 DSH bundle：Host 半边是空操作，Web Client 模块注册头部入口。
 
-1. Clone the repository somewhere stable.
-2. In DeepSeek Harness, install the bundle from that directory with the Plugin Manager
-   (install bundle → local directory), or select the bundle in the profile that should
-   carry it. The package is `dsh-token-overview`; no build step is required.
-3. Reload the Web page. The `token总览` action appears in the conversation session header.
+1. 把仓库克隆到固定位置。
+2. 在 DeepSeek Harness 中用 Plugin Manager 从该目录安装 bundle（安装 bundle → 本地目录），
+   或在需要启用它的 profile 里选中该 bundle。包名是 `dsh-token-overview`，无需构建。
+3. 刷新 Web 页面。`token总览` 入口会出现在会话头部。
 
-The plugin needs the standard Web conversation UI (`conversation.session.header.actions`)
-and the sessions Client service. It contributes no Host tools, prompts, or model-visible
-content.
+插件依赖标准 Web 会话 UI（`conversation.session.header.actions`）与 sessions Client 服务。
+它不贡献任何 Host 工具、提示词或模型可见内容。
 
-## Usage
+## 使用
 
-1. Open a session that ran a team or delegated subagents.
-2. Click **`token总览`** in the header.
-3. Read the panel: one row per agent, sorted in session-tree order, with shares; the footer
-   shows the run total and cache hit ratio.
+1. 打开一个运行过团队或委派过子代理的会话。
+2. 点击头部的 **`token总览`**。
+3. 看浮窗：每个代理一行，按会话树顺序排列并带占比；底部是本场总计与缓存命中率。
 
-Click outside or press `Esc` to close.
+点击外部或按 `Esc` 关闭。
 
-### Counting semantics
+### 计数口径
 
-- **Total** = `uncachedInputTokens + cacheReadTokens + cacheWriteTokens + outputTokens`.
-  This is processed-token volume — what the Web UI usage pill shows — not a billing amount.
-  Cached reads are usually an order of magnitude cheaper; apply prices per bucket if you
-  need cost.
-- **Session tree** = the current Session and descendants reached through
-  `parentId` + `origin: "subagent"`, unioned with `subagentCatalog` entries.
-- **Names** come from the lead session's `agentTeam` roster when present, otherwise from
-  the child's durable subagent label / session title.
-- When a session is opened directly as a teammate/subagent, the panel still aggregates from
-  the run's top-level Session.
+- **总量** = `uncachedInputTokens + cacheReadTokens + cacheWriteTokens + outputTokens`。
+  这是处理量——也就是 Web UI usage 药丸显示的值——不是账单金额。缓存读通常便宜一个数量级；
+  需要成本时按各桶单价加权。
+- **会话树** = 当前会话，以及通过 `parentId` + `origin: "subagent"` 可达、并与
+  `subagentCatalog` 条目合并的后代。
+- **名称** 优先取 lead 会话的 `agentTeam` roster；没有时回退到子会话的持久 subagent 标签 /
+  会话标题。
+- 直接以 teammate/subagent 身份打开会话时，浮窗仍然从本次运行的顶层会话开始汇总。
 
-## Limitations
+## 限制
 
-- **Fork-inherited prefixes.** DSH's Client `tokenUsage` projection includes the inherited
-  prefix of a seeded (fork) child session. The browser cannot see the inherited cut, so a
-  run that used `subagent_fork` may count the parent prefix once more. For exact
-  own-suffix accounting, use the companion CLI:
-  [`dsh-token-report`](https://github.com/matcha-cult/dsh-token-report) (reads the same
-  session logs on disk and skips inherited prefixes).
-- **External backends.** ACP / Codex / Claude Code children have no DSH session projection,
-  so their tokens are not in this total.
-- **One Session tree at a time.** Cross-session or per-day totals are out of scope; use the
-  CLI for store-wide reports.
-- Numbers depend on projections being served for the child sessions. If a child is cold and
-  its projection cache has not been read yet, the panel requests
-  `refreshProjections()` and fills the row in when it arrives.
+- **Fork 继承前缀。** DSH 的 Client `tokenUsage` 投影会包含带种子（fork）子会话继承的
+  前缀。浏览器看不到继承切分，因此用过 `subagent_fork` 的运行可能把父前缀多算一次。
+  需要精确的“自身后缀”口径时，请使用配套 CLI `dsh-token-report`（读取同一份磁盘日志并跳过
+  继承前缀）。
+- **外部后端。** ACP / Codex / Claude Code 子会话没有 DSH 会话投影，其 token 不计入本合计。
+- **一次只汇总一棵会话树。** 跨会话或按天的合计不在范围内；请用 CLI 做全库报表。
+- 数字依赖子会话的投影已下发。冷子会话若还没读过投影缓存，浮窗会请求
+  `refreshProjections()`，到达后补上该行。
 
-## Development
+## 开发
 
-Plain JavaScript; no build, no dependencies. The layout is four files plus resources:
+纯 JavaScript；无构建、无依赖。布局是四个文件加资源：
 
-| File | Role |
+| 文件 | 作用 |
 | --- | --- |
-| `package.json` | bundle manifest, `dsh.bundle.patch`, `dsh.client` declaration |
-| `cordis.patch.yml` | inserts the `token-overview` row |
-| `index.js` | Host half (no-op) |
-| `client.js` | Client module: state model, popover, styles, locale dictionaries |
-| `locale/en.json`, `locale/zh.json` | plugin-manager display metadata |
-| `icon.svg` | plugin artwork |
+| `package.json` | bundle 清单、`dsh.bundle.patch`、`dsh.client` 声明 |
+| `cordis.patch.yml` | 插入 `token-overview` 行 |
+| `index.js` | Host 半边（空操作） |
+| `client.js` | Client 模块：状态模型、浮窗、样式、locale 字典 |
+| `locale/en.json`、`locale/zh.json` | Plugin Manager 展示元数据 |
+| `icon.svg` | 插件图标 |
 
-The Client module is a lazy factory loaded through `window.__ModuleLoader__`; it registers
-one slot entry in `conversation.session.header.actions` and binds its own locale namespace
-`dsh-token-overview`.
+Client 模块是通过 `window.__ModuleLoader__` 加载的惰性工厂；它在
+`conversation.session.header.actions` 注册一个槽位条目，并绑定自己的 locale 命名空间
+`dsh-token-overview`。
 
-## Testing
+## 测试
 
 ```bash
 node test/smoke.mjs
 ```
 
-The smoke test renders the registered header action with a small React-hooks
-stand-in, opens the popover and asserts the aggregated rows, shares and total
-(no browser or DOM required).
+冒烟测试用一个小型 React hooks 替身渲染注册的头部入口，打开浮窗并断言聚合后的行、占比与
+总计（不需要浏览器或 DOM）。
 
-## License
+## 许可
 
 MIT
